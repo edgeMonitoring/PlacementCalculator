@@ -27,8 +27,8 @@ public class G_infrastructure {
 	public G_infrastructure(String infrastrctureId) throws FileNotFoundException, YamlException {
 	
 		ClassLoader classLoader = getClass().getClassLoader();
-		//String filesPath = classLoader.getResource("").getPath();
-		String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
+		String filesPath = classLoader.getResource("").getPath();
+		//String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
 		
 		YamlReader serversReader = new YamlReader(new FileReader(filesPath+"infrastructure_"+infrastrctureId+"/servers.yml"));
 		while (true) {
