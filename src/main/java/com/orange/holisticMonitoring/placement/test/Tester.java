@@ -19,7 +19,7 @@ public class Tester {
 		System.out.println();
 		
 		System.out.println("Mutualised placement calculation");
-		NonMutualisedCalculator.calculate("I","UR");
+		MutualisedCalculator.calculate("I","UR");
 		
     }
 
