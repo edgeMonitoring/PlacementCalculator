@@ -29,8 +29,8 @@ public class G_usersRequirements {
 		
 		super();
 		ClassLoader classLoader = getClass().getClassLoader();
-		//String filesPath = classLoader.getResource("").getPath();
-		String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
+		String filesPath = classLoader.getResource("").getPath();
+		//String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
 		
 		YamlReader functionsReader = new YamlReader(new FileReader(filesPath+"usersRequirements_"+usersRequirementsId+"/functions.yml"));
 		while (true) {
