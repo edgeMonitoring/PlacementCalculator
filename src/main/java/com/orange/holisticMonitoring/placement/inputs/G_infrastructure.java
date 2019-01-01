@@ -24,13 +24,9 @@ public class G_infrastructure {
 		return allPaths;
 	}
 	
-	public G_infrastructure(String infrastrctureId) throws FileNotFoundException, YamlException {
-	
-		ClassLoader classLoader = getClass().getClassLoader();
-		String filesPath = classLoader.getResource("").getPath();
-		//String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
+	public G_infrastructure(String infrastrcturePath) throws FileNotFoundException, YamlException {
 		
-		YamlReader serversReader = new YamlReader(new FileReader(filesPath+"infrastructure_"+infrastrctureId+"/servers.yml"));
+		YamlReader serversReader = new YamlReader(new FileReader(infrastrcturePath+"/servers.yml"));
 		while (true) {
 	    	Server server = serversReader.read(Server.class);
 	    	if (server == null) break;
@@ -39,7 +35,7 @@ public class G_infrastructure {
 	    
 		Graph g = new Graph(this.servers.size());
 		
-		YamlReader linksReader = new YamlReader(new FileReader(filesPath+"infrastructure_"+infrastrctureId+"/links.yml"));
+		YamlReader linksReader = new YamlReader(new FileReader(infrastrcturePath+"/links.yml"));
 		while (true) {
 	    	Link link = linksReader.read(Link.class);
 	    	if (link == null) break;

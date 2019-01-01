@@ -67,7 +67,7 @@
 				    <arguments>
 				        <argument>-classpath</argument> 
 				        <classpath />
-				        <argument>com.orange.holisticMonitoring.placement.test.Tester</argument>
+				        <argument>com.orange.holisticMonitoring.placement.cli.Cli</argument>
 				        <argument>-Xms512m</argument>
 				        <argument>-Xmx60g</argument>
 				        <argument>-d64</argument>

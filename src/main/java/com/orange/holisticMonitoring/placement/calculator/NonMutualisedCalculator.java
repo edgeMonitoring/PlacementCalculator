@@ -41,7 +41,7 @@ public class NonMutualisedCalculator {
 
     static int maxLinkCapability = 10000;
 
-    public static CalculationResult calculate(String infrastructureId,String usersRequirementsId) throws YamlException, FileNotFoundException {
+    public static CalculationResult calculate(String infrastructurePath,String usersRequirementsPath, boolean singleSolution, String calculationDuration) throws YamlException, FileNotFoundException {
     	//Model model = new Model("Monitoring service placement");
         GraphModel model = new GraphModel();
         model.set(new Settings() {
@@ -59,10 +59,8 @@ public class NonMutualisedCalculator {
         //*******************************************************************************
 
         
-        System.out.println("infrastrctureId="+infrastructureId+" ; usersRequirementId="+usersRequirementsId);
-        
-        G_infrastructure g_infrastructure = new G_infrastructure(infrastructureId);
-        G_usersRequirements g_usersRequirements = new G_usersRequirements(usersRequirementsId);
+        G_infrastructure g_infrastructure = new G_infrastructure(infrastructurePath);
+        G_usersRequirements g_usersRequirements = new G_usersRequirements(usersRequirementsPath);
 
         int trashServerId = g_infrastructure.getServers().size();//!
 
@@ -424,23 +422,23 @@ public class NonMutualisedCalculator {
 //            cstrs++;
 //            count += c.isReified() ? 1 : 0;
 //        }
-        System.out.printf("#var: %d, #cstr: %d " +
+//        System.out.printf("#var: %d, #cstr: %d " +
 //                        "(%d : %d), " +
-                        "(%.3fs)\n",
-                model.getNbVars(),
-                model.getNbCstrs(),
+//                        "(%.3fs)\n",
+//                model.getNbVars(),
+//                model.getNbCstrs(),
 //                cstrs,
 //                count,
-                (System.nanoTime() - model.getCreationTime()) * 1.e-9f);
-        System.out.printf("#ivar: %d, #bvar: %d, #svar: %d\n",
-                model.getNbIntVar(false),
-                model.getNbBoolVar(),
-                model.getNbSetVar());
+//                (System.nanoTime() - model.getCreationTime()) * 1.e-9f);
+//        System.out.printf("#ivar: %d, #bvar: %d, #svar: %d\n",
+//                model.getNbIntVar(false),
+//                model.getNbBoolVar(),
+//                model.getNbSetVar());
 
 
         int minFP = Integer.MAX_VALUE;
         int maxFP = 0;
-        solver.limitTime("10m");
+        solver.limitTime(calculationDuration+"m");
 //        solver.showSolutions();
         solver.setRestartOnSolutions();
 //        solver.setNoGoodRecordingFromRestarts();
@@ -453,12 +451,40 @@ public class NonMutualisedCalculator {
         
         networkFootprint.add(0);
         computeFootprint.add(0);
-        System.out.println("Time & computeFootprint & networkFootprint");
+        //System.out.println("Time & computeFootprint & networkFootprint");
         
         boolean firstSolution = true;
         CalculationResult result = new CalculationResult();
         
-        while(solver.solve()) {
+	int solutionsNumber = 0;
+	
+	if(singleSolution){
+		Solution solution = solver.findSolution();
+		if(solution == null)
+			System.out.println("No placement has been found");
+		else{
+			System.out.print("Placement (calculation time: "+String.format("%.3f", solver.getTimeCount())+"s, compute footprint: "+X_computeFootprint.getValue()+", network footprint:  "+X_networkFootprint.getValue()+") :\n\n");
+			System.out.println("Function (Id) --> Hosting server (Id) :");
+			for (int functionId = 0; functionId < F_ids.length; functionId++)
+					    System.out.println(functionId + " --> " + X_serverHostingF[functionId].getValue());
+			System.out.println();
+			System.out.println("Flow (source function Id; destination function Id) --> Hosting link (source server Id; destination server Id)");
+			for (int flowId = 0; flowId < R_ids.length; flowId++){
+				if ((X_linksHostingFl[flowId].getValue().toString().contentEquals("{}")) == false){
+					    	System.out.print( "("+headId(R_ids[flowId],F_ids.length)+";"+tailId(R_ids[flowId],F_ids.length) + ") -->");
+						String virgule="";
+						for(int link:X_linksHostingFl[flowId].getValue()){
+						      System.out.print(virgule+" ("+headId(link,S_ids.length-1)+";"+tailId(link,S_ids.length-1) + ")");
+						      virgule=",";
+						}
+						System.out.println();
+				}			
+			}
+			System.out.println();
+		}
+	}
+	else {
+	while(solver.solve()) {
             //System.out.printf("#sol: %s (%.3fs)\n", solver.getSolutionCount(), solver.getTimeCount());
             //System.out.printf("computeFootprint: %d\n", X_computeFootprint.getValue());
             //System.out.printf("networkFootprint: %d\n", X_networkFootprint.getValue());
@@ -467,7 +493,11 @@ public class NonMutualisedCalculator {
             networkFootprint.add(X_networkFootprint.getValue());
             computeFootprint.add(X_computeFootprint.getValue());
             
-            System.out.println(solver.getTimeCount()+" & "+X_computeFootprint.getValue()+" & "+X_networkFootprint.getValue());
+            //System.out.println(solver.getTimeCount()+" & "+X_computeFootprint.getValue()+" & "+X_networkFootprint.getValue());
+		
+            solutionsNumber++;
+            System.out.print("Placement "+solutionsNumber+" (calculation time: "+String.format("%.3f", solver.getTimeCount())+"s, compute footprint: "+X_computeFootprint.getValue()+", network footprint:  "+X_networkFootprint.getValue()+") :\n\n");
+
             if (firstSolution){
             	result.firstSolution_time = solver.getTimeCount();
             	result.firstSolution_computeFootprint = X_computeFootprint.getValue();
@@ -497,18 +527,27 @@ public class NonMutualisedCalculator {
 //                assert v.isInstantiated();
 //            }
             //System.out.println(solution.toString().replaceAll(", X", ", \n X"));
-//            String X_str_serviceFunctions = X_serviceFunctions.getValue().toString();
-//            System.out.println("X_serviceFunctions : " + X_serviceFunctions.getValue().toString());
-//            for (int functionId = 0; functionId < F_ids.length; functionId++)
-//                if (X_str_serviceFunctions.contains(Integer.toString(functionId)))
-//                    System.out.println("X_serverHostingF[" + functionId + "] = " + X_serverHostingF[functionId].getValue());
-//            System.out.println();
-//            System.out.println("X_serviceFlows : " + X_serviceFlows.getValue().toString());
-//            for (int flowId = 0; flowId < FxF_ids.length; flowId++)
-//                if ((X_linksHostingFl[flowId].getValue().toString().contentEquals("{}")) == false)
-//                    System.out.println("X_linksHostingFl[" + flowId + "] = " + X_linksHostingFl[flowId].getValue());
+
+	    System.out.println("Function (Id) --> Hosting server (Id) :");
+            for (int functionId = 0; functionId < F_ids.length; functionId++){
+                    System.out.println(functionId + " --> " + X_serverHostingF[functionId].getValue());
+		}
+	     System.out.println();
+
+	    System.out.println("Flow (source function Id; destination function Id) --> Hosting link (source server Id; destination server Id)");
+            for (int flowId = 0; flowId < R_ids.length; flowId++)
+                if ((X_linksHostingFl[flowId].getValue().toString().contentEquals("{}")) == false){
+                    	System.out.print( "("+headId(R_ids[flowId],F_ids.length)+";"+tailId(R_ids[flowId],F_ids.length) + ") -->");
+			String virgule="";
+			for(int link:X_linksHostingFl[flowId].getValue()){
+				System.out.print(virgule+" ("+headId(link,S_ids.length-1)+";"+tailId(link,S_ids.length-1) + ")");
+				virgule=",";
+			}
+			System.out.println();
+		}
+		System.out.print("------------------------\n\n");
+
 //	    	/**/
-//            System.out.println();
 //	    	for (int flowId = 0; flowId < X_flowEquivToRindex.length; flowId++)
 //                System.out.println("X_flowEquivToRindex[" + flowId + "] = " + X_flowEquivToRindex[flowId].getValue());
             /*ClassLoader classLoader = Calculator.class.getClassLoader();
@@ -519,12 +558,12 @@ public class NonMutualisedCalculator {
             } catch (IOException e) {
                 e.printStackTrace();
             }*/
-        }
+        }}
 //        System.out.println();
         //solver.printStatistics();
-        //String str = "T"+usersRequirementsId+"(x)= ";
-        String networkFootprintCurve = "N_networkFootrpint_"+infrastructureId+usersRequirementsId+"(x)= ";
-        String computeFootprintCurve = "N_computeFootrpint_"+infrastructureId+usersRequirementsId+"(x)= ";
+        //String str = "T"+usersRequirementsPath+"(x)= ";
+        String networkFootprintCurve = "N_networkFootrpint_"+infrastructurePath+usersRequirementsPath+"(x)= ";
+        String computeFootprintCurve = "N_computeFootrpint_"+infrastructurePath+usersRequirementsPath+"(x)= ";
         String computeMutualisationLabels = "";
         String networkMutualisationLabels = "";
         
@@ -556,7 +595,7 @@ public class NonMutualisedCalculator {
 
         return result;
     
-    
+   
     }
 
 }

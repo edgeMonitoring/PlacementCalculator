@@ -25,14 +25,11 @@ public class G_usersRequirements {
 		return allPaths;
 	}
 	
-	public G_usersRequirements(String usersRequirementsId) throws FileNotFoundException, YamlException {
+	public G_usersRequirements(String usersRequirementsPath) throws FileNotFoundException, YamlException {
 		
 		super();
-		ClassLoader classLoader = getClass().getClassLoader();
-		String filesPath = classLoader.getResource("").getPath();
-		//String filesPath = "/home/mohamed/workspace/PlacementCalculator/src/main/resources/";
-		
-		YamlReader functionsReader = new YamlReader(new FileReader(filesPath+"usersRequirements_"+usersRequirementsId+"/functions.yml"));
+				
+		YamlReader functionsReader = new YamlReader(new FileReader(usersRequirementsPath+"/functions.yml"));
 		while (true) {
 	    	Function function = functionsReader.read(Function.class);
 	    	if (function == null) break;
@@ -41,7 +38,7 @@ public class G_usersRequirements {
 	    
 		Graph g = new Graph(this.functions.size());
 		
-		YamlReader flowsReader = new YamlReader(new FileReader(filesPath+"usersRequirements_"+usersRequirementsId+"/flows.yml"));
+		YamlReader flowsReader = new YamlReader(new FileReader(usersRequirementsPath+"/flows.yml"));
 		while (true) {
 	    	Flow flow = flowsReader.read(Flow.class);
 	    	if (flow == null) break;
